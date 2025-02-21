@@ -1,0 +1,273 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+	"sync"
+
+	"github.com/joho/godotenv"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
+
+var (
+	botToken    string
+	supabaseURL string
+	supabaseKey string
+
+	training = struct { // Состояние тренировки
+		sync.Mutex
+		data map[int64]map[string]interface{} // chatID -> слово для проверки
+	}{data: make(map[int64]map[string]interface{})}
+)
+
+func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Ошибка загрузки .env файла")
+	}
+	botToken = os.Getenv("BOT_TOKEN")       // Токен бота из переменной окружения
+	supabaseURL = os.Getenv("SUPABASE_URL") // URL Supabase
+	supabaseKey = os.Getenv("SUPABASE_KEY") // Ключ Supabase
+
+	if botToken == "" || supabaseURL == "" || supabaseKey == "" {
+		log.Fatal("Необходимо задать BOT_TOKEN, SUPABASE_URL и SUPABASE_KEY в переменных окружения")
+	}
+
+	bot, err := tgbotapi.NewBotAPI(botToken)
+	if err != nil {
+		log.Fatalf("Ошибка инициализации бота: %v", err)
+	}
+
+	bot.Debug = true
+	log.Printf("Авторизован как %s", bot.Self.UserName)
+
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+
+	updates := bot.GetUpdatesChan(u)
+
+	for update := range updates {
+		if update.Message == nil {
+			continue
+		}
+
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
+		switch update.Message.Text {
+		case "/start":
+			msg.Text = "Привет! Я бот для заучивания слов.\n" +
+				"/addgroup [название] — создать группу\n" +
+				"/addword [группа] [иностранное слово] - [перевод] — добавить слово\n" +
+				"/train [группа] — начать тренировку"
+		default:
+			handleCommand(bot, update)
+		}
+		if _, err := bot.Send(msg); err != nil {
+			log.Printf("Ошибка отправки сообщения: %v", err)
+		}
+	}
+}
+
+func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	text := update.Message.Text
+	chatID := update.Message.Chat.ID
+	userID := update.Message.From.ID
+
+	// Проверка ответа в режиме тренировки
+	training.Lock()
+	if word, inTraining := training.data[chatID]; inTraining {
+		training.Unlock()
+		if text == word["native_word"].(string) {
+			sendMessage(bot, chatID, "Верно!")
+		} else {
+			sendMessage(bot, chatID, fmt.Sprintf("Неверно! Правильный ответ: %s", word["native_word"]))
+		}
+		training.Lock()
+		delete(training.data, chatID)
+		training.Unlock()
+		return
+	}
+	training.Unlock()
+
+	// Обработка команд
+	if strings.HasPrefix(text, "/addgroup") {
+		parts := strings.SplitN(text, " ", 2)
+		if len(parts) < 2 {
+			sendMessage(bot, chatID, "Укажи название группы: /addgroup [название]")
+			return
+		}
+		addGroup(bot, chatID, userID, parts[1])
+	} else if strings.HasPrefix(text, "/addword") {
+		parts := strings.SplitN(text, " ", 3)
+		if len(parts) < 3 || !strings.Contains(parts[2], "-") {
+			sendMessage(bot, chatID, "Формат: /addword [группа] [иностранное слово] - [перевод]")
+			return
+		}
+		groupName := parts[1]
+		wordParts := strings.SplitN(parts[2], "-", 2)
+		foreignWord := strings.TrimSpace(wordParts[0])
+		nativeWord := strings.TrimSpace(wordParts[1])
+		addWord(bot, chatID, userID, groupName, foreignWord, nativeWord)
+	} else if strings.HasPrefix(text, "/train") {
+		parts := strings.SplitN(text, " ", 2)
+		if len(parts) < 2 {
+			sendMessage(bot, chatID, "Укажи группу: /train [группа]")
+			return
+		}
+		startTraining(bot, chatID, userID, parts[1])
+	}
+}
+
+func sendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
+	msg := tgbotapi.NewMessage(chatID, text)
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Ошибка отправки сообщения: %v", err)
+	}
+}
+
+func addGroup(bot *tgbotapi.BotAPI, chatID int64, userID int64, name string) {
+	body := map[string]interface{}{
+		"name":    name,
+		"user_id": userID,
+	}
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		sendMessage(bot, chatID, "Ошибка при создании группы")
+		return
+	}
+
+	req, err := http.NewRequest("POST", supabaseURL+"/rest/v1/groups", strings.NewReader(string(jsonBody)))
+	if err != nil {
+		sendMessage(bot, chatID, "Ошибка при создании запроса")
+		return
+	}
+	req.Header.Set("apikey", supabaseKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		sendMessage(bot, chatID, "Ошибка подключения к базе данных")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 201 {
+		sendMessage(bot, chatID, fmt.Sprintf("Группа %s создана!", name))
+	} else {
+		sendMessage(bot, chatID, "Не удалось создать группу")
+	}
+}
+
+func addWord(bot *tgbotapi.BotAPI, chatID int64, userID int64, groupName, foreignWord, nativeWord string) {
+	groupID := getGroupID(bot, chatID, userID, groupName)
+	if groupID == 0 {
+		return
+	}
+
+	body := map[string]interface{}{
+		"group_id":     groupID,
+		"foreign_word": foreignWord,
+		"native_word":  nativeWord,
+	}
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		sendMessage(bot, chatID, "Ошибка при добавлении слова")
+		return
+	}
+
+	req, err := http.NewRequest("POST", supabaseURL+"/rest/v1/words", strings.NewReader(string(jsonBody)))
+	if err != nil {
+		sendMessage(bot, chatID, "Ошибка при создании запроса")
+		return
+	}
+	req.Header.Set("apikey", supabaseKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != 201 {
+		sendMessage(bot, chatID, "Ошибка при добавлении слова")
+		return
+	}
+	defer resp.Body.Close()
+	sendMessage(bot, chatID, fmt.Sprintf("Слово %s - %s добавлено в группу %s", foreignWord, nativeWord, groupName))
+}
+
+func getGroupID(bot *tgbotapi.BotAPI, chatID int64, userID int64, groupName string) int {
+	url := fmt.Sprintf("%s/rest/v1/groups?user_id=eq.%d&name=eq.%s&select=id", supabaseURL, userID, groupName)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		sendMessage(bot, chatID, "Ошибка при создании запроса")
+		return 0
+	}
+	req.Header.Set("apikey", supabaseKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		sendMessage(bot, chatID, "Ошибка подключения к базе данных")
+		return 0
+	}
+	defer resp.Body.Close()
+
+	var result []map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		sendMessage(bot, chatID, "Ошибка обработки данных")
+		return 0
+	}
+	if len(result) == 0 {
+		sendMessage(bot, chatID, "Группа не найдена")
+		return 0
+	}
+	return int(result[0]["id"].(float64))
+}
+
+func startTraining(bot *tgbotapi.BotAPI, chatID int64, userID int64, groupName string) {
+	groupID := getGroupID(bot, chatID, userID, groupName)
+	if groupID == 0 {
+		return
+	}
+
+	words := getRandomWord(bot, chatID, groupID)
+	if len(words) == 0 {
+		sendMessage(bot, chatID, "В группе нет слов")
+		return
+	}
+
+	word := words[0]
+	sendMessage(bot, chatID, fmt.Sprintf("Переведи: %s", word["foreign_word"]))
+
+	training.Lock()
+	training.data[chatID] = word
+	training.Unlock()
+}
+
+func getRandomWord(bot *tgbotapi.BotAPI, chatID int64, groupID int) []map[string]interface{} {
+	url := fmt.Sprintf("%s/rest/v1/words?group_id=eq.%d&order=random&limit=1", supabaseURL, groupID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		sendMessage(bot, chatID, "Ошибка при создании запроса")
+		return nil
+	}
+	req.Header.Set("apikey", supabaseKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		sendMessage(bot, chatID, "Ошибка подключения к базе данных")
+		return nil
+	}
+	defer resp.Body.Close()
+
+	var words []map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&words); err != nil {
+		sendMessage(bot, chatID, "Ошибка обработки данных")
+		return nil
+	}
+	return words
+}
