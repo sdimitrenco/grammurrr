@@ -26,9 +26,12 @@ var (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Ошибка загрузки .env файла")
+	if os.Getenv("RAILWAY_ENVIRONMENT") == "" {
+		// Локальный запуск – загружаем .env
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal("Ошибка загрузки .env файла")
+		}
 	}
 	botToken = os.Getenv("BOT_TOKEN")       // Токен бота из переменной окружения
 	supabaseURL = os.Getenv("SUPABASE_URL") // URL Supabase
