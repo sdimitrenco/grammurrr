@@ -1,6 +1,6 @@
-module github.com/sdimitrenco/word-learning-bot
+module github.com/sdimitrenco/grammurrr
 
-go 1.13
+go 1.23.3
 
 require (
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
