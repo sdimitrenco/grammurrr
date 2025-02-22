@@ -1,0 +1,56 @@
+/internal
+  /entities        → Бизнес-модели (слова, группы)
+  /usecases        → Бизнес-логика (WordService)
+  /interfaces
+    /repositories  → Интерфейсы хранилища
+    /adapters      → Telegram, WhatsApp API
+  /infrastructure
+    /storage/sqlite → Реализация базы
+    /logging        → Логирование
+  /config          → Настройки
+  /controllers
+    /http          → Обработка HTTP-запросов
+    /bot           → Обработка команд ботов
+
+    models
+
+    -users
+    id
+    name
+    firstname
+    lastname
+    email
+    pass
+
+
+    -users_telegram
+    user_id string
+    tuser_id string
+    chat_id string
+
+    -words
+    id bigInt
+    word string
+    lang string
+    part_of_speech string 
+    transcription string
+
+    -translation
+    meaning_id
+    translation_id  
+
+    -word_groups
+    id
+    name
+    lang_from
+    lang_to
+    user_id
+    status
+
+    -word_groups_words
+    group_id
+    word_meaning_id
+    level
+    status
+    last_right
+

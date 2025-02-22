@@ -1,0 +1,18 @@
+---
+
+is_debug: true
+listen:
+  type: port
+  bind_ip: 0.0.0.0
+  port: 8888
+db:
+  host: ${DB_HOST}
+  port: ${DB_PORT}
+  name: ${DB_NAME}
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+  db_ssl: ${DB_SSL}
+  type: ${DB_TYPE}
+telegram_bot:
+  token: ${TELEGRAM_BOT_TOKEN}
+  

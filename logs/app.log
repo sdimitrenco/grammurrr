@@ -1,0 +1,6 @@
+time="2025-02-22T18:43:01+01:00" level=info msg="Приложение запущено" func="github.com/sdimitrenco/grammurrr/pkg/logrus.(*LogrusLogger).Info()" file="logrus.go:67"
+time="2025-02-22T18:43:01+01:00" level=warning msg="Приложение запущено" func="github.com/sdimitrenco/grammurrr/pkg/logrus.(*LogrusLogger).Warn()" file="logrus.go:71"
+time="2025-02-22T18:43:01+01:00" level=error msg="Приложение запущено" func="github.com/sdimitrenco/grammurrr/pkg/logrus.(*LogrusLogger).Error()" file="logrus.go:75"
+time="2025-02-22T18:43:33+01:00" level=info msg="Приложение запущено" func="github.com/sdimitrenco/grammurrr/pkg/logrus.(*LogrusLogger).Info()" file="logrus.go:67"
+time="2025-02-22T18:43:33+01:00" level=warning msg="Приложение запущено" func="github.com/sdimitrenco/grammurrr/pkg/logrus.(*LogrusLogger).Warn()" file="logrus.go:71"
+time="2025-02-22T18:43:33+01:00" level=error msg="Приложение запущено" func="github.com/sdimitrenco/grammurrr/pkg/logrus.(*LogrusLogger).Error()" file="logrus.go:75"
