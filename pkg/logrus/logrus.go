@@ -9,25 +9,24 @@ import (
 
 	lgr "github.com/sirupsen/logrus"
 )
+
 type LogrusLogger struct {
 	entry *lgr.Entry
 }
 
 type writerHook struct {
-	Writer []io.Writer
+	Writer    []io.Writer
 	LogLevels []lgr.Level
 }
 
 func (hook *writerHook) Fire(entry *lgr.Entry) error {
 	line, err := entry.String()
-
 	if err != nil {
 		return err
 	}
 	for _, w := range hook.Writer {
 		w.Write([]byte(line))
 	}
-
 	return err
 }
 
@@ -37,12 +36,8 @@ func (hook *writerHook) Levels() []lgr.Level {
 
 func NewLogrusLogger() *LogrusLogger {
 	l := lgr.New()
-	l.SetReportCaller(true)
+	// Убираем SetReportCaller(true), чтобы Logrus не добавлял свои func и file
 	l.Formatter = &lgr.TextFormatter{
-		CallerPrettyfier: func(frame *runtime.Frame) (string, string) {
-			filename := path.Base(frame.File)
-			return fmt.Sprintf("%s()", frame.Function), fmt.Sprintf("%s:%d", filename, frame.Line)
-		},
 		DisableColors: false,
 		FullTimestamp: true,
 	}
@@ -62,19 +57,31 @@ func NewLogrusLogger() *LogrusLogger {
 	return &LogrusLogger{entry: lgr.NewEntry(l)}
 }
 
-// Реализация методов логирования
+func (l *LogrusLogger) WithCaller() *lgr.Entry {
+	return l.entry.WithField("caller", getCaller(4))
+}
+
+func getCaller(skip int) string {
+	pc, file, line, ok := runtime.Caller(skip)
+	if !ok {
+		return "unknown"
+	}
+	fn := runtime.FuncForPC(pc)
+	return fmt.Sprintf("%s:%d %s()", path.Base(file), line, path.Base(fn.Name()))
+}
+
 func (l *LogrusLogger) Info(args ...interface{}) {
-	l.entry.Info(args...)
+	l.WithCaller().Info(args...)
 }
 
 func (l *LogrusLogger) Warn(args ...interface{}) {
-	l.entry.Warn(args...)
+	l.WithCaller().Warn(args...)
 }
 
 func (l *LogrusLogger) Error(args ...interface{}) {
-	l.entry.Error(args...)
+	l.WithCaller().Error(args...)
 }
 
 func (l *LogrusLogger) Debug(args ...interface{}) {
-	l.entry.Debug(args...)
+	l.WithCaller().Debug(args...)
 }
