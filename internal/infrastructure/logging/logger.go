@@ -4,6 +4,7 @@ type LoggerInterface interface {
 	Info(args ...interface{})
 	Warn(args ...interface{})
 	Error(args ...interface{})
+	Fatal(args ...interface{})
 	Debug(args ...interface{})
 }
 
@@ -27,8 +28,10 @@ func (l *Logger) Error(args ...interface{}) {
 	l.logger.Error(args...)
 }
 
+func (l *Logger) Fatal(args ...interface{}) {
+	l.logger.Fatal(args...)
+}
+
 func (l *Logger) Debug(args ...interface{}) {
 	l.logger.Debug(args...)
 }
-
-

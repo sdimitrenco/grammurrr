@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/sdimitrenco/grammurrr/internal/infrastructure/logging"
 )
 
 type Config struct {
@@ -34,9 +35,8 @@ type Config struct {
 var instance *Config
 var once sync.Once
 
-func GetConfig() *Config {
+func GetConfig(logger *logging.Logger) *Config {
 	once.Do(func() {
-		logger := logging.NewLogger()
 		logger.Info("Get application configuration")
 		instance = &Config{}
 

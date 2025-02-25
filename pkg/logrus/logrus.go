@@ -85,3 +85,8 @@ func (l *LogrusLogger) Error(args ...interface{}) {
 func (l *LogrusLogger) Debug(args ...interface{}) {
 	l.WithCaller().Debug(args...)
 }
+
+func (l *LogrusLogger) Fatal(args ...interface{}) {
+	l.WithCaller().Error(args...)
+	l.entry.Logger.Exit(1)
+}
