@@ -1,7 +1,7 @@
 include .env
 export $(shell sed 's/=.*//' .env)
 
-DB_URL=postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSL)
+DB_URL=postgres://$(DB_USER):$(DB_PASS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSL)
 MIGRATE=migrate -database "$(DB_URL)" -path internal/infrastructure/storage/postgres/migrations/
 
 .PHONY: migrate-up migrate-down migrate-create load-env

@@ -9,11 +9,7 @@ import (
 func main() {
 	log := logging.NewLogger(logrus.NewLogrusLogger())
 
-	log.Info("Приложение запущено")
-	log.Debug("Приложение запущено")
-	log.Fatal("fatal запущено")
-	log.Warn("Приложение запущено")
-	log.Error("Приложение запущено")
+	
 	entities.Test(log)
 
 	test(log)
