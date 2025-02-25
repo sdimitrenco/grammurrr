@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/sdimitrenco/reports/pkg/logging"
 )
 
 type Config struct {

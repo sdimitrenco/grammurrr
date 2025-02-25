@@ -10,6 +10,8 @@ db:
   port: ${DB_PORT}
   name: ${DB_NAME}
   user: ${DB_USER}
+  url: ${DB_URL}
+  key: ${DB_KEY}
   password: ${DB_PASSWORD}
   db_ssl: ${DB_SSL}
   type: ${DB_TYPE}

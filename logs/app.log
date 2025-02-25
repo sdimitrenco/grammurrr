@@ -89,3 +89,8 @@ time="2025-02-22T19:26:37+01:00" level=warning msg="Приложение зап�
 time="2025-02-22T19:26:37+01:00" level=error msg="Приложение запущено" caller="app.go:15 main.main()"
 time="2025-02-22T19:26:37+01:00" level=error msg="bad something" caller="test.go:7 entities.Test()"
 time="2025-02-22T19:26:37+01:00" level=info msg="Приложение запущено 2" caller="app.go:22 main.test()"
+time="2025-02-25T17:01:29+01:00" level=info msg="Приложение запущено" caller="app.go:12 main.main()"
+time="2025-02-25T17:01:30+01:00" level=warning msg="Приложение запущено" caller="app.go:14 main.main()"
+time="2025-02-25T17:01:31+01:00" level=error msg="Приложение запущено" caller="app.go:15 main.main()"
+time="2025-02-25T17:01:33+01:00" level=error msg="bad something" caller="test.go:7 entities.Test()"
+time="2025-02-25T17:01:34+01:00" level=info msg="Приложение запущено 2" caller="app.go:22 main.test()"
