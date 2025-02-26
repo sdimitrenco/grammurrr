@@ -17,4 +17,4 @@ db:
   type: ${DB_TYPE}
 telegram_bot:
   token: ${TELEGRAM_BOT_TOKEN}
-  
+

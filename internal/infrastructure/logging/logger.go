@@ -6,6 +6,7 @@ type LoggerInterface interface {
 	Error(args ...interface{})
 	Fatal(args ...interface{})
 	Debug(args ...interface{})
+	WithField(key string, value interface{}) *Logger
 }
 
 type Logger struct {
@@ -34,4 +35,10 @@ func (l *Logger) Fatal(args ...interface{}) {
 
 func (l *Logger) Debug(args ...interface{}) {
 	l.logger.Debug(args...)
+}
+
+func (l *Logger) WithField(key string, value interface{}) *Logger {
+	newLogger := l.logger.WithField(key, value)
+	l.logger = newLogger.logger
+	return newLogger
 }

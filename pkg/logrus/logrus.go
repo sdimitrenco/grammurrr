@@ -8,10 +8,13 @@ import (
 	"runtime"
 
 	lgr "github.com/sirupsen/logrus"
+	"github.com/sdimitrenco/grammurrr/internal/infrastructure/logging"
 )
 
+// LogrusLogger implements the logging.LoggerInterface
 type LogrusLogger struct {
-	entry *lgr.Entry
+	logger *lgr.Logger
+	entry  *lgr.Entry
 }
 
 type writerHook struct {
@@ -25,21 +28,28 @@ func (hook *writerHook) Fire(entry *lgr.Entry) error {
 		return err
 	}
 	for _, w := range hook.Writer {
-		w.Write([]byte(line))
+		_, err := w.Write([]byte(line))
+		if err != nil {
+			return err
+		}
 	}
-	return err
+	return nil
 }
 
 func (hook *writerHook) Levels() []lgr.Level {
 	return hook.LogLevels
 }
 
+// NewLogrusLogger creates a new LogrusLogger instance.
 func NewLogrusLogger() *LogrusLogger {
 	l := lgr.New()
-	// Убираем SetReportCaller(true), чтобы Logrus не добавлял свои func и file
+	l.SetReportCaller(false)
 	l.Formatter = &lgr.TextFormatter{
-		DisableColors: false,
-		FullTimestamp: true,
+		DisableColors:            false,
+		FullTimestamp:            true,
+		TimestampFormat:          "2006-01-02T15:04:05-07:00",
+		ForceQuote:               true,
+		DisableLevelTruncation:   true,
 	}
 
 	_ = os.MkdirAll("logs", 0755)
@@ -54,9 +64,10 @@ func NewLogrusLogger() *LogrusLogger {
 		LogLevels: lgr.AllLevels,
 	})
 
-	return &LogrusLogger{entry: lgr.NewEntry(l)}
+	return &LogrusLogger{logger: l, entry: lgr.NewEntry(l)}
 }
 
+// WithCaller adds caller information to the log entry.
 func (l *LogrusLogger) WithCaller() *lgr.Entry {
 	return l.entry.WithField("caller", getCaller(4))
 }
@@ -70,23 +81,41 @@ func getCaller(skip int) string {
 	return fmt.Sprintf("%s:%d %s()", path.Base(file), line, path.Base(fn.Name()))
 }
 
+// Info logs an info message.
 func (l *LogrusLogger) Info(args ...interface{}) {
-	l.WithCaller().Info(args...)
+	l.entry.WithField("caller", getCaller(4)).Info(args...)
 }
 
+// Warn logs a warning message.
 func (l *LogrusLogger) Warn(args ...interface{}) {
-	l.WithCaller().Warn(args...)
+	l.entry.WithField("caller", getCaller(4)).Warn(args...)
 }
 
+// Error logs an error message.
 func (l *LogrusLogger) Error(args ...interface{}) {
-	l.WithCaller().Error(args...)
+	l.entry.WithField("caller", getCaller(4)).Error(args...)
 }
 
+// Debug logs a debug message.
 func (l *LogrusLogger) Debug(args ...interface{}) {
-	l.WithCaller().Debug(args...)
+	l.entry.WithField("caller", getCaller(4)).Debug(args...)
 }
 
+// Fatal logs a fatal message and exits.
 func (l *LogrusLogger) Fatal(args ...interface{}) {
-	l.WithCaller().Error(args...)
-	l.entry.Logger.Exit(1)
+	l.entry.WithField("caller", getCaller(4)).Error(args...)
+	l.logger.Exit(1)
+}
+
+// WithField adds a field to the log entry.
+func (l *LogrusLogger) WithField(key string, value interface{}) *logging.Logger {
+	// Create a copy of the current entry and add the new field.
+	newEntry := l.entry.WithField(key, value)
+	//Create new Logger from new Entry
+	newLogger := &LogrusLogger{
+		logger: l.logger,
+		entry:  newEntry,
+	}
+	//Return wraped Logger
+	return logging.NewLogger(newLogger)
 }
