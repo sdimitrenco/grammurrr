@@ -1,0 +1,44 @@
+/word-trainer-bot
+│── /cmd
+│   ├── /bot             # Точка входа для бота
+│   ├── /server          # Точка входа для HTTP-сервера
+│
+│── /internal
+│   ├── /adapters        # Адаптеры для внешних API (Telegram, WhatsApp)
+│   │   ├── telegram_adapter.go
+│   │   ├── whatsapp_adapter.go
+│   │   └── bot_adapter.go  # Интерфейс адаптеров ботов
+│   │
+│   ├── /config          # Конфигурации (парсинг env, JSON, etc.)
+│   │   ├── config.go
+│   │
+│   ├── /controllers
+│   │   ├── bot_controller.go   # Контроллер для бота (Telegram, WhatsApp)
+│   │   ├── http_controller.go  # Контроллер для HTTP API
+│   │
+│   ├── /domain          # Сущности и бизнес-логика (чистая модель)
+│   │   ├── word.go      # Определение структуры слова
+│   │
+│   ├── /infrastructure  # Инфраструктурный код (логирование, БД)
+│   │   ├── logging
+│   │   │   ├── logger.go
+│   │   ├── storage
+│   │   │   ├── postgres.go  # Реализация хранения в PostgreSQL
+│   │
+│   ├── /interfaces      # Интерфейсы для сервисов
+│   │   ├── word_repository.go  # Интерфейс репозитория
+│   │   ├── bot_handler.go      # Интерфейс хендлера сообщений бота
+│   │
+│   ├── /repositories    # Реализация интерфейсов репозиториев
+│   │   ├── word_repository_pg.go  # Репозиторий для работы с БД
+│   │
+│   ├── /usecases        # Бизнес-логика (сервисы)
+│   │   ├── word_service.go  # Сервис для работы со словами
+│
+│── /pkg                 # Внешние утилиты, если нужно
+│
+│── /api                 # OpenAPI спецификация (если нужна)
+│
+│── go.mod
+│── go.sum
+│── README.md

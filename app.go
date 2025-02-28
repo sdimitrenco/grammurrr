@@ -3,16 +3,18 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	"github.com/sdimitrenco/grammurrr/internal/adapters"
 	"github.com/sdimitrenco/grammurrr/internal/config"
-	"github.com/sdimitrenco/grammurrr/internal/entities"
+	"github.com/sdimitrenco/grammurrr/internal/controllers"
 	"github.com/sdimitrenco/grammurrr/internal/infrastructure/logging"
 	"github.com/sdimitrenco/grammurrr/pkg/logrus"
 )
 
 func main() {
-	// Устанавливаем часовой пояс на Europe/Berlin
 	loc, err := time.LoadLocation("Europe/Berlin")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading location: %v\n", err)
@@ -26,22 +28,21 @@ func main() {
 
 	cfg := config.GetConfig()
 
-	fmt.Println(cfg.DB.Host)
-	fmt.Println(cfg.DB.Password)
+	// Теперь NewBotController возвращает *BotControllerImpl, что удовлетворяет интерфейсу
+	bot, err := adapters.NewTelegramAdapter(cfg.TelegramBot.Token, controllers.NewBotController(log))
+	if err != nil {
+		log.WithField("start bot", "can't create bot").Fatal(err)
+	}
 
-	// Create logger with field
-	logWithField := log.WithField("key", "value")
+	go bot.Start()
 
-	// Log error with field
-	logWithField.Error("bad something")
-
-	// Pass logger with field
-	entities.Test(logWithField)
-
-	// Pass logger with field
-	test(logWithField)
+	waitForShutdown(log)
 }
 
-func test(log *logging.Logger) {
-	log.Info("Приложение запущено 2")
+func waitForShutdown(log *logging.Logger) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	<-sigChan
+	log.Info("Received shutdown signal, exiting...")
 }
