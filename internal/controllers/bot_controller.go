@@ -1,13 +1,12 @@
 package controllers
 
 import (
-
 	"github.com/sdimitrenco/grammurrr/internal/domains"
 	"github.com/sdimitrenco/grammurrr/internal/infrastructure/logging"
 )
 
 type BotController interface {
-	HandleUpdate(update domains.Message) interface{}
+	HandleUpdate(update domains.Message, answer domains.AnswerMessage) domains.AnswerMessage
 }
 
 type BotControllerImpl struct {
@@ -20,11 +19,11 @@ func NewBotController(log *logging.Logger) *BotControllerImpl {
 	}
 }
 
-func (b *BotControllerImpl) HandleUpdate(update domains.Message) interface{} {
+func (b *BotControllerImpl) HandleUpdate(update domains.Message, answer domains.AnswerMessage) domains.AnswerMessage {
 	switch update.Message.Text {
 	case "/start":
-		return b.Start()
+		return b.Start(answer)
 	default:
-		return nil
+		return answer
 	}
 }

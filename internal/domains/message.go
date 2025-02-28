@@ -6,3 +6,6 @@ type Message struct {
 	Message *tgbotapi.Message
 }
 
+type AnswerMessage struct {
+	Message tgbotapi.MessageConfig
+}
