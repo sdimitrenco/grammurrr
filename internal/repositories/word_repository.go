@@ -1,13 +1,14 @@
 package repositories
 
+import "github.com/sdimitrenco/grammurrr/internal/domains"
+
 type WordRepository interface {
-	FindAll() ([]Word, error)
-	FindById(id int) (Word, error)
-	FindByWord(word string) (Word, error)
-	FindTranslate(word string) (Word, error)
-	Create(word Word) (Word, error)
-	Update(word Word) (Word, error)
+	FindAll() ([]domains.Word, error)
+	FindById(id int) (domains.Word, error)
+	FindByWord(word, lang string) (domains.Word, error)
+	FindTranslate(word string) (domains.Word, error)
+	Create(word domains.Word) (domains.Word, error)
+	Update(word domains.Word) (domains.Word, error)
 	Delete(id int) error
 }
 
-type Word string

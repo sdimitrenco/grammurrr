@@ -22,13 +22,11 @@ func main() {
 	}
 	time.Local = loc
 
-	// Create base logger
 	logrusLogger := logrus.NewLogrusLogger()
 	log := logging.NewLogger(logrusLogger)
 
 	cfg := config.GetConfig()
 
-	// Теперь NewBotController возвращает *BotControllerImpl, что удовлетворяет интерфейсу
 	bot, err := adapters.NewTelegramAdapter(cfg.TelegramBot.Token, controllers.NewBotController(log))
 	if err != nil {
 		log.WithField("start bot", "can't create bot").Fatal(err)
