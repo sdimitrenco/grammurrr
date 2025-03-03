@@ -10,8 +10,10 @@ import (
 	"github.com/sdimitrenco/grammurrr/internal/adapters"
 	"github.com/sdimitrenco/grammurrr/internal/config"
 	"github.com/sdimitrenco/grammurrr/internal/controllers"
-	"github.com/sdimitrenco/grammurrr/internal/domains"
 	"github.com/sdimitrenco/grammurrr/internal/infrastructure/logging"
+	"github.com/sdimitrenco/grammurrr/internal/infrastructure/storage"
+	"github.com/sdimitrenco/grammurrr/internal/infrastructure/storage/postgres"
+	"github.com/sdimitrenco/grammurrr/internal/usecases"
 	"github.com/sdimitrenco/grammurrr/pkg/logrus"
 )
 
@@ -28,17 +30,19 @@ func main() {
 
 	cfg := config.GetConfig()
 
-	bot, err := adapters.NewTelegramAdapter(cfg.TelegramBot.Token, controllers.NewBotController(log))
+	db := storage.NewPostgresDB()
+
+	groupRepo := postgres.NewGroupRepositoryPostgres(db)
+	wordUseCase := usecases.NewGroupUseCase(groupRepo, log)
+	controllers := controllers.NewBotController(log, wordUseCase)
+
+	bot, err := adapters.NewTelegramAdapter(cfg.TelegramBot.Token, controllers)
+	
 	if err != nil {
 		log.WithField("start bot", "can't create bot").Fatal(err)
 	}
 
 	go bot.Start()
-
-	a := 1
-	b := 2
-
-	fmt.Println(domains.Ternary(a > b, a, b))
 
 	waitForShutdown(log)
 
