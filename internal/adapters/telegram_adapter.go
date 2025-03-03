@@ -11,9 +11,6 @@ type TelegramAdapter struct {
 	controller controllers.BotController
 }
 
-type Message struct {
-	Text string
-}
 
 func NewTelegramAdapter(token string, controller controllers.BotController) (bot *TelegramAdapter, err error) {
 

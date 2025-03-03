@@ -1,8 +1,9 @@
 package domains
 
-import "github.com/sdimitrenco/grammurrr/internal/infrastructure/logging"
 
-
-func Test(log *logging.Logger) {
-	log.Error("bad something")
+func Ternary[T any](condition bool, trueValue, falseValue T) T {
+	if condition {
+		return trueValue
+	}
+	return falseValue
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/sdimitrenco/grammurrr/internal/adapters"
 	"github.com/sdimitrenco/grammurrr/internal/config"
 	"github.com/sdimitrenco/grammurrr/internal/controllers"
+	"github.com/sdimitrenco/grammurrr/internal/domains"
 	"github.com/sdimitrenco/grammurrr/internal/infrastructure/logging"
 	"github.com/sdimitrenco/grammurrr/pkg/logrus"
 )
@@ -34,7 +35,14 @@ func main() {
 
 	go bot.Start()
 
+	a := 1
+	b := 2
+
+	fmt.Println(domains.Ternary(a > b, a, b))
+
 	waitForShutdown(log)
+
+
 }
 
 func waitForShutdown(log *logging.Logger) {
